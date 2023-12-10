@@ -11,7 +11,7 @@ app.use(express.json());
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '..Open4me',
+    password: '',
     database: 'employeelist_db'
 })
 
