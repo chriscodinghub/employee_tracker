@@ -3,19 +3,23 @@ const express = require('express');
 const mysql = require('mysql2');
 const PORT = process.env.PORT || 3001;
 const app = express();
+const inquirer = require('./index');
+require('dotenv').config();
 
 // Express middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '..Open4me',
-    database: 'employeelist_db'
-})
 
-app.get('/api/departments', (req, res) => {
+const connection = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+});
+
+
+app.get('/api/department', (req, res) => {
     const sql = `SELECT * FROM department`;
     
     db.query(sql, (err, rows) => {
@@ -31,7 +35,9 @@ app.get('/api/departments', (req, res) => {
   });
 
   app.get('/api/job', (req, res) => {
-    const sql = `SELECT * FROM job`;
+    const sql = `SELECT job.title, job.id, department.dept_name AS department, job.salary
+    FROM job
+    JOIN department ON job.department_id = department.id;`;
     
     db.query(sql, (err, rows) => {
       if (err) {
@@ -46,7 +52,10 @@ app.get('/api/departments', (req, res) => {
   });
 
   app.get('/api/employee', (req, res) => {
-    const sql = `SELECT * FROM employee`;
+    const sql = `SELECT employee.id, employee.first_name, employee.last_name, job.title, department.dept_name, job.salary, employee.managers_name
+    FROM employee
+    JOIN job ON employee.role_id = job.id
+    JOIN department ON job.department_id = department.id;`;
     
     db.query(sql, (err, rows) => {
       if (err) {
@@ -77,6 +86,64 @@ JOIN employee ON job.id = employee.role_id;`;
       });
     });
   });
+
+  app.post('/api/department', (req, res) => {
+    const { id, dept_name } = req.body;
+  
+    const sql = `INSERT INTO department (id, dept_name) VALUES (?, ?)`;
+    const values = [id, dept_name];
+  
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+  
+      res.json({
+        message: 'success',
+        data: result
+      });
+    });
+  });
+
+  app.post('/api/job', (req, res) => {
+    const { id, title, salary, department_id } = req.body;
+  
+    const sql = `INSERT INTO job (id, title, salary, department_id) VALUES (?, ?, ?, ?)`;
+    const values = [id, title, salary, department_id];
+  
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+  
+      res.json({
+        message: 'success',
+        data: result
+      });
+    });
+  });
+
+  app.post('/api/employee', (req, res) => {
+    const { id, first_name, last_name, role_id, managers_name } = req.body;
+  
+    const sql = `INSERT INTO employee (id, first_name, last_name, role_id, managers_name) VALUES (?, ?, ?, ?, ?)`;
+    const values = [id, first_name, last_name, role_id, managers_name];
+  
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+  
+      res.json({
+        message: 'success',
+        data: result
+      });
+    });
+  });
+    
 
 
 
